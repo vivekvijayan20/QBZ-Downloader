@@ -44,9 +44,14 @@ FROM node:22-alpine AS production
 LABEL maintainer="ifauzeee"
 LABEL version="4.0.0"
 
-RUN apk add --no-cache chromaprint
+# Added python3 and py3-pip to support magic-wormhole on Alpine
+RUN apk add --no-cache chromaprint python3 py3-pip
 
 WORKDIR /app
+
+# Install magic-wormhole globally
+# Note: --break-system-packages is required for PEP 668 compliance in newer Alpine versions
+RUN pip install --break-system-packages magic-wormhole
 
 RUN addgroup -g 1001 -S qbz && \
     adduser -S -u 1001 -G qbz qbz
@@ -71,4 +76,6 @@ USER qbz
 HEALTHCHECK --interval=60s --timeout=15s --start-period=30s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:${DASHBOARD_PORT}/api/status || exit 1
 
+# Default start command. 
+# Remember to override this in Render Settings to trigger the 'wormhole send'
 CMD ["node", "dist/index.js"]
